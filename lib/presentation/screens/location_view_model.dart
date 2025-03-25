@@ -6,6 +6,7 @@ import 'package:marti_case/features/location/data/repositories/track_location.da
 import 'package:marti_case/features/location/domain/models/location_model.dart';
 import 'package:marti_case/features/location/domain/models/location_state.dart';
 import 'package:marti_case/features/location/domain/repositories/location_repository.dart';
+import 'package:marti_case/features/location/domain/models/route_history_model.dart';
 
 class LocationViewModel extends StateNotifier<LocationState> {
   final GetCurrentLocation _getCurrentLocation;
@@ -106,6 +107,49 @@ class LocationViewModel extends StateNotifier<LocationState> {
 
   void clearLocationHistory() {
     state = state.copyWith(locationHistory: []);
+  }
+
+  // void resetRoute() {
+  //   final currentLocation = state.currentLocation;
+  //   final isTracking = state.isTracking;
+
+  //   state = state.copyWith(
+  //     locationHistory: [],
+  //     currentLocation: currentLocation,
+  //     isTracking: isTracking,
+  //   );
+  // }
+
+  Future<void> resetRoute() async {
+    try {
+      final currentLocation = state.currentLocation;
+      final isTracking = state.isTracking;
+
+      if (state.locationHistory.isNotEmpty) {
+        await _locationRepository.saveRouteHistory(state.locationHistory);
+      }
+
+      state = state.copyWith(
+        locationHistory: [],
+        currentLocation: currentLocation,
+        isTracking: isTracking,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Rota sıfırlanırken hata: ${e.toString()}',
+      );
+    }
+  }
+
+  // Geçmiş rotaları getir
+  Future<List<RouteHistoryModel>> getRouteHistory() async {
+    try {
+      return await _locationRepository.getRouteHistory();
+    } catch (e) {
+      state = state.copyWith(
+          error: 'Geçmiş rotalar alınırken hata: ${e.toString()}');
+      return [];
+    }
   }
 
   @override

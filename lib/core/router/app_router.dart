@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:marti_case/features/location/domain/models/route_history_model.dart';
 import 'package:marti_case/presentation/map_screen.dart';
 import 'package:marti_case/presentation/screens/home_screen.dart';
+import 'package:marti_case/presentation/screens/route_map_screen.dart';
 
 class AppRouter {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -77,6 +79,11 @@ class AppRouterDelegate extends RouterDelegate<Object>
             key: ValueKey('MapScreen'),
             child: MapScreen(),
           ),
+        if (_isRouteMapVisible && _selectedRoute != null)
+          MaterialPage(
+            key: const ValueKey('route_map'),
+            child: RouteMapScreen(route: _selectedRoute!),
+          ),
       ],
       onPopPage: (route, result) {
         if (!route.didPop(result)) {
@@ -89,9 +96,24 @@ class AppRouterDelegate extends RouterDelegate<Object>
           notifyListeners();
         }
 
+        if (_isRouteMapVisible) {
+          _isRouteMapVisible = false;
+          notifyListeners();
+          return true;
+        }
+
         return true;
       },
     );
+  }
+
+  RouteHistoryModel? _selectedRoute;
+  bool _isRouteMapVisible = false;
+
+  void navigateToRouteMap(RouteHistoryModel route) {
+    _selectedRoute = route;
+    _isRouteMapVisible = true;
+    notifyListeners();
   }
 
   void navigateToHome() {
