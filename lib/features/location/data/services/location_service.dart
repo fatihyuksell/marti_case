@@ -28,7 +28,7 @@ class LocationServiceImpl implements LocationService {
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 50,
+        distanceFilter: 1,
       ),
     ).map((position) => LocationModel(
           latitude: position.latitude,

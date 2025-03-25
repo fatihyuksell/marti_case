@@ -4,6 +4,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:marti_case/core/dep_injection.dart';
 
 import 'package:marti_case/features/location/domain/models/location_model.dart';
+import 'package:marti_case/features/location/domain/models/location_state.dart';
+import 'package:marti_case/presentation/screens/location_view_model.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -14,27 +16,26 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   LocationModel? _selectedLocation;
+  late final LocationViewModel viewModel;
+  GoogleMapController? _mapController;
+  bool _userZoomChanged = false;
+  final double _defaultZoom = 20.0;
+  final Set<Marker> _markers = {};
 
   @override
   void initState() {
     super.initState();
+    viewModel = ref.read(locationViewModelProvider.notifier);
     Future.microtask(() {
-      ref.read(locationViewModelProvider.notifier).getCurrentLocation();
-      ref.read(locationViewModelProvider.notifier).startTracking();
+      viewModel.getCurrentLocation();
+      viewModel.startTracking();
     });
   }
 
   @override
   void dispose() {
-    // ViewModel referansını, dispose çağrılmadan önce al
-    final viewModel = ref.read(locationViewModelProvider.notifier);
-
-    // Önce üst sınıfın dispose metodunu çağır
-    super.dispose();
-
-    // Ardından ViewModel üzerinde işlemi gerçekleştir
-    // Bu şekilde 'ref' kullanımı widget dispose olduktan sonra gerçekleşmez
     viewModel.stopTracking();
+    super.dispose();
   }
 
   @override
@@ -45,7 +46,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     debugPrint('Mevcut konum: ${locationState.currentLocation?.longitude}');
     debugPrint('Konum geçmişi sayısı: ${locationState.locationHistory.length}');
 
-    Set<Marker> markers = {};
+    _updateMarkers(locationState);
 
     Set<Polyline> polylines = {};
     List<LatLng> polylineCoordinates = [];
@@ -73,46 +74,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           jointType: JointType.round,
         ),
       );
-
-      for (int i = 0; i < locationState.locationHistory.length; i++) {
-        LocationModel location = locationState.locationHistory[i];
-        markers.add(
-          Marker(
-            markerId: MarkerId('location_$i'),
-            position: LatLng(location.latitude, location.longitude),
-            infoWindow: InfoWindow(
-              title: 'Konum ${i + 1}',
-              snippet: '${location.timestamp.toLocal()}',
-            ),
-            onTap: () {
-              setState(() {
-                _selectedLocation = location;
-              });
-            },
-          ),
-        );
-      }
-    }
-
-    if (locationState.currentLocation != null) {
-      markers.add(
-        Marker(
-          markerId: const MarkerId('current_location'),
-          position: LatLng(
-            locationState.currentLocation!.latitude,
-            locationState.currentLocation!.longitude,
-          ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-          infoWindow: const InfoWindow(
-            title: 'Şu anki konumunuz',
-          ),
-          onTap: () {
-            setState(() {
-              _selectedLocation = locationState.currentLocation;
-            });
-          },
-        ),
-      );
     }
 
     CameraPosition initialPosition = locationState.currentLocation != null
@@ -121,12 +82,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               locationState.currentLocation!.latitude,
               locationState.currentLocation!.longitude,
             ),
-            zoom: 15,
+            zoom: _defaultZoom,
           )
         : const CameraPosition(
-            target: LatLng(41.0082, 28.9784), // İstanbul
+            target: LatLng(41.0082, 28.9784),
             zoom: 10,
           );
+
+    if (locationState.currentLocation != null &&
+        _mapController != null &&
+        locationState.isTracking &&
+        _selectedLocation == null) {
+      _updateCameraPosition(
+        LatLng(
+          locationState.currentLocation!.latitude,
+          locationState.currentLocation!.longitude,
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -158,18 +131,29 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               children: [
                 GoogleMap(
                   initialCameraPosition: initialPosition,
-                  markers: markers,
+                  markers: _markers,
                   polylines: polylines,
                   myLocationEnabled: true,
                   myLocationButtonEnabled: true,
                   mapType: MapType.normal,
                   onMapCreated: (GoogleMapController controller) {
-                    // Harita controller'ını gerekirse saklayabilirsiniz
+                    _mapController = controller;
+                  },
+                  onCameraMove: (CameraPosition position) {
+                    _userZoomChanged = true;
                   },
                   onTap: (LatLng position) {
-                    // Harita boş bir yerine tıklandığında seçili lokasyonu temizle
                     setState(() {
                       _selectedLocation = null;
+
+                      if (locationState.currentLocation != null) {
+                        _updateCameraPosition(
+                          LatLng(
+                            locationState.currentLocation!.latitude,
+                            locationState.currentLocation!.longitude,
+                          ),
+                        );
+                      }
                     });
                   },
                 ),
@@ -206,27 +190,225 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               'Zaman: ${_selectedLocation!.timestamp.toLocal()}',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedLocation = null;
+
+                                    if (locationState.currentLocation != null) {
+                                      _updateCameraPosition(
+                                        LatLng(
+                                          locationState
+                                              .currentLocation!.latitude,
+                                          locationState
+                                              .currentLocation!.longitude,
+                                        ),
+                                      );
+                                    }
+                                  });
+                                },
+                                child: Text('Kapat'),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                // Debug bilgisi için ekran üzerinde gösterge
+                // Marker ve rota sayısını gösteren widget
                 Positioned(
-                  top: 20,
+                  bottom: 100,
                   right: 20,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.black54,
-                    child: Text(
-                      'Marker: ${markers.length} | Rota: ${polylineCoordinates.length} nokta',
-                      style: const TextStyle(color: Colors.white),
+                  child: GestureDetector(
+                    onTap: () {
+                      _showMarkersInfoDialog(context, _markers);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('Marker: ${_markers.length}'),
+                          Text('Rota: ${polylines.length}'),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
     );
+  }
+
+  void _updateCameraPosition(LatLng position) {
+    if (_mapController == null) return;
+
+    if (_userZoomChanged) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLng(position),
+      );
+    } else {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(position, _defaultZoom),
+      );
+    }
+  }
+
+  // Marker bilgilerini gösteren popup - tüm marker'lar ve detaylı zaman damgası
+  void _showMarkersInfoDialog(BuildContext context, Set<Marker> markers) {
+    final locationState = ref.read(locationViewModelProvider);
+
+    // Tüm marker'ları ve zaman bilgilerini saklayacak liste
+    final List<Map<String, dynamic>> allMarkers = [];
+
+    // Her marker için timestamp bilgisini bul
+    for (var marker in markers) {
+      final lat = marker.position.latitude;
+      final lng = marker.position.longitude;
+
+      // Konum bilgisine karşılık gelen LocationModel'i bulmaya çalışıyoruz
+      DateTime? timestamp;
+      if (locationState.locationHistory.isNotEmpty) {
+        for (var location in locationState.locationHistory) {
+          if ((location.latitude - lat).abs() < 0.000001 &&
+              (location.longitude - lng).abs() < 0.000001) {
+            timestamp = location.timestamp;
+            break;
+          }
+        }
+      }
+
+      allMarkers.add({
+        'position': marker.position,
+        'timestamp': timestamp,
+      });
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Tüm Marker Konumları'),
+        content: Container(
+          width: double.maxFinite,
+          height:
+              MediaQuery.of(context).size.height * 0.6, // Yüksekliği sınırla
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: allMarkers.length,
+            itemBuilder: (context, index) {
+              final data = allMarkers[index];
+              final position = data['position'] as LatLng;
+              final timestamp = data['timestamp'] as DateTime?;
+
+              String timeString = 'Zaman bilgisi yok';
+              if (timestamp != null) {
+                timeString =
+                    '${timestamp.day}/${timestamp.month}/${timestamp.year} '
+                    '${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}:'
+                    '${timestamp.second.toString().padLeft(2, '0')}.'
+                    '${timestamp.millisecond.toString().padLeft(3, '0')}';
+              }
+
+              return ListTile(
+                title: Text('Marker ${index + 1}'),
+                subtitle: Text(
+                  'Enlem: ${position.latitude.toStringAsFixed(6)}\n'
+                  'Boylam: ${position.longitude.toStringAsFixed(6)}\n'
+                  'Zaman: $timeString',
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Kapat'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _updateMarkers(LocationState locationState) {
+    if (locationState.locationHistory.isEmpty) return;
+
+    // Mevcut marker'ları temizleyelim
+    _markers.clear();
+
+    // Eklenen konumları takip etmek için bir set kullanacağız
+    Set<String> addedPositions = {};
+
+    // Her konum için bir marker oluştur, ama aynı konumları filtrele
+    for (int i = 0; i < locationState.locationHistory.length; i++) {
+      final location = locationState.locationHistory[i];
+
+      // Konum bilgisini bir anahtar olarak oluştur (çok hassas bir karşılaştırma için)
+      // 6 ondalık basamak yaklaşık 10cm hassasiyet sağlar
+      final positionKey =
+          '${location.latitude.toStringAsFixed(6)},${location.longitude.toStringAsFixed(6)}';
+
+      // Eğer bu konum daha önce eklenmediyse ekle
+      if (!addedPositions.contains(positionKey)) {
+        // Bu konumu eklenen konumlar setine kaydet
+        addedPositions.add(positionKey);
+
+        final isSelected = _selectedLocation?.latitude == location.latitude &&
+            _selectedLocation?.longitude == location.longitude;
+        final isLastLocation = i == locationState.locationHistory.length - 1;
+
+        _markers.add(
+          Marker(
+            markerId:
+                MarkerId(location.timestamp.millisecondsSinceEpoch.toString()),
+            position: LatLng(location.latitude, location.longitude),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              isSelected
+                  ? BitmapDescriptor.hueGreen
+                  : isLastLocation
+                      ? BitmapDescriptor.hueRed
+                      : BitmapDescriptor.hueViolet,
+            ),
+            infoWindow: InfoWindow(
+              title: 'Konum ${addedPositions.length}',
+              snippet:
+                  '${location.timestamp.day}/${location.timestamp.month} ${location.timestamp.hour}:${location.timestamp.minute}',
+            ),
+            onTap: () {
+              setState(() {
+                _selectedLocation = location;
+
+                _mapController?.animateCamera(
+                  CameraUpdate.newLatLng(
+                      LatLng(location.latitude, location.longitude)),
+                );
+              });
+            },
+          ),
+        );
+
+        // Debug mesajı ekleyelim, marker ekleme işlemlerini izleyelim
+        debugPrint('Marker eklendi: $positionKey');
+      } else {
+        // Debug mesajı ekleyelim, atlanan konumları görelim
+        debugPrint('Aynı konum atlandı: $positionKey');
+      }
+    }
+
+    // Eklenen benzersiz marker sayısını göster
+    debugPrint('Toplam eklenen benzersiz marker sayısı: ${_markers.length}');
   }
 }
 

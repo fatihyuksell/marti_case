@@ -99,7 +99,9 @@ class LocationViewModel extends StateNotifier<LocationState> {
 
   void stopTracking() {
     _locationSubscription?.cancel();
-    state = state.copyWith(isTracking: false);
+    Future.microtask(() {
+      state = state.copyWith(isTracking: false);
+    });
   }
 
   void clearLocationHistory() {
