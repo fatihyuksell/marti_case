@@ -223,7 +223,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
-  // ====== MARKER İŞLEMLERİ ======
   void _updateMarkers(LocationState locationState) {
     if (locationState.locationHistory.isEmpty) return;
 
