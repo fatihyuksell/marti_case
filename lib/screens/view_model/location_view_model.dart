@@ -139,6 +139,18 @@ class LocationViewModel extends StateNotifier<LocationState> {
     }
   }
 
+  void addLocationToHistory(LocationModel location) {
+    if (!state.isTracking) return;
+
+    final updatedHistory = List<LocationModel>.from(state.locationHistory)
+      ..add(location);
+
+    state = state.copyWith(
+      currentLocation: location,
+      locationHistory: updatedHistory,
+    );
+  }
+
   @override
   void dispose() {
     _locationSubscription?.cancel();

@@ -9,6 +9,7 @@ import 'package:marti_case/data/repositories/track_location.dart';
 import 'package:marti_case/data/services/location_service.dart';
 import 'package:marti_case/data/models/location_state.dart';
 import 'package:marti_case/data/repositories/location_repository.dart';
+import 'package:marti_case/core/services/background_location_service.dart';
 import 'package:marti_case/screens/view_model/location_view_model.dart';
 
 // Router Provider
@@ -67,4 +68,10 @@ final locationRepository = Provider<LocationRepository>((ref) {
     permissionService: ref.watch(permissionServiceProvider),
     storageService: ref.watch(storageServiceProvider),
   );
+});
+
+final backgroundLocationServiceProvider =
+    Provider<BackgroundLocationService>((ref) {
+  final locationViewModel = ref.read(locationViewModelProvider.notifier);
+  return BackgroundLocationService(locationViewModel);
 });

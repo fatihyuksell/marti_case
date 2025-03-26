@@ -16,6 +16,10 @@ class LocationServiceImpl implements LocationService {
         latitude: position.latitude,
         longitude: position.longitude,
         timestamp: DateTime.now(),
+        accuracy: position.accuracy,
+        altitude: position.altitude,
+        heading: position.heading,
+        speed: position.speed,
       );
     } catch (e) {
       debugPrint('Error getting current location: $e');
@@ -28,12 +32,16 @@ class LocationServiceImpl implements LocationService {
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 2,
+        distanceFilter: 100,
       ),
     ).map((position) => LocationModel(
           latitude: position.latitude,
           longitude: position.longitude,
           timestamp: DateTime.now(),
+          accuracy: position.accuracy,
+          altitude: position.altitude,
+          heading: position.heading,
+          speed: position.speed,
         ));
   }
 }
