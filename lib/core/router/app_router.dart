@@ -7,22 +7,17 @@ import 'package:marti_case/screens/views/route_map_screen.dart';
 class AppRouter {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  // Router delegasyonu oluşturma
   final AppRouterDelegate routerDelegate = AppRouterDelegate();
 
-  // Route bilgisini işleyecek parser
   final RouteInformationParser<Object> routeInformationParser =
       AppRouteInformationParser();
 
-  // Route bilgisini sağlayan provider
   final RouteInformationProvider routeInformationProvider =
       PlatformRouteInformationProvider(
     initialRouteInformation: const RouteInformation(
       location: '/',
     ),
   );
-
-  // Yardımcı metodlar
   void navigateToHome() {
     routerDelegate.navigateToHome();
   }
@@ -32,13 +27,11 @@ class AppRouter {
   }
 
   Future<bool> pop<T extends Object?>([T? result]) async {
-    // Önce Navigator'ı kontrol ediyoruz
     if (navigatorKey.currentState?.canPop() ?? false) {
       navigatorKey.currentState!.pop(result);
       return true;
     }
 
-    // Eğer navigator'da pop yapılamıyorsa, router delegate'e yönlendir
     return await routerDelegate.popRoute();
   }
 }
@@ -53,9 +46,10 @@ class AppRouteConfiguration {
 
   static AppRouteConfiguration home = AppRouteConfiguration(location: '/');
   static AppRouteConfiguration map = AppRouteConfiguration(location: '/map');
+  static AppRouteConfiguration routeMap =
+      AppRouteConfiguration(location: '/route_map');
 }
 
-// Özel Router Delegate sınıfı
 class AppRouterDelegate extends RouterDelegate<Object>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<Object> {
   @override
@@ -81,7 +75,7 @@ class AppRouterDelegate extends RouterDelegate<Object>
           ),
         if (_isRouteMapVisible && _selectedRoute != null)
           MaterialPage(
-            key: const ValueKey('route_map'),
+            key: const ValueKey('RouteMapScreen'),
             child: RouteMapScreen(route: _selectedRoute!),
           ),
       ],
@@ -90,7 +84,6 @@ class AppRouterDelegate extends RouterDelegate<Object>
           return false;
         }
 
-        // Eğer map sayfasından çıkılıyorsa, home'a dönüş
         if (_configuration.location == '/map') {
           _configuration = AppRouteConfiguration.home;
           notifyListeners();
@@ -138,12 +131,11 @@ class AppRouterDelegate extends RouterDelegate<Object>
 
   @override
   Future<void> setNewRoutePath(configuration) async {
-    // URL değişikliklerini işleme - örneğin deep link için
+    //TODO: implement for deeplink
     return;
   }
 }
 
-// URL yolunu uygulama içi yapılandırmaya dönüştüren parser
 class AppRouteInformationParser extends RouteInformationParser<Object> {
   @override
   Future<Object> parseRouteInformation(
@@ -156,6 +148,10 @@ class AppRouteInformationParser extends RouteInformationParser<Object> {
 
     if (location == '/map') {
       return AppRouteConfiguration.map;
+    }
+
+    if (location == '/route_map') {
+      return AppRouteConfiguration.routeMap;
     }
 
     return AppRouteConfiguration.home;
