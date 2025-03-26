@@ -1,0 +1,6 @@
+<dict>
+    <key>NSPrivacyAccessedAPICategory</key>
+    <array>
+        <string>fileTimestamp</string>
+    </array>
+</dict>
