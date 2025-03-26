@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:marti_case/core/services/permission_service.dart';
 import 'package:marti_case/core/services/storage_service.dart';
-import 'package:marti_case/features/location/data/services/location_service.dart';
-import 'package:marti_case/features/location/domain/models/location_model.dart';
-import 'package:marti_case/features/location/domain/models/route_history_model.dart';
-import 'package:marti_case/features/location/domain/repositories/location_repository.dart';
-import 'dart:math' show sin, cos, sqrt, atan2, pi;
+import 'package:marti_case/data/services/location_service.dart';
+import 'package:marti_case/data/models/location_model.dart';
+import 'package:marti_case/data/models/route_history_model.dart';
+import 'package:marti_case/data/repositories/location_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:math' show sin, cos, sqrt, atan2, pi;
 
 class LocationRepositoryImpl implements LocationRepository {
   final LocationService locationService;
@@ -114,32 +114,10 @@ class LocationRepositoryImpl implements LocationRepository {
     }
   }
 
-  // RouteHistoryModel _createRouteFromLocationHistory(
-  //     List<LocationModel> locationHistory) {
-  //   final firstLocation = locationHistory.first;
-  //   final lastLocation = locationHistory.last;
-
-  //   double totalDistance = _calculateTotalDistance(locationHistory);
-
-  //   return RouteHistoryModel(
-  //     id: const Uuid().v4(),
-  //     startTime: DateTime.fromMillisecondsSinceEpoch(
-  //       firstLocation.timestamp.millisecondsSinceEpoch,
-  //     ),
-  //     endTime: DateTime.fromMillisecondsSinceEpoch(
-  //       lastLocation.timestamp.millisecondsSinceEpoch,
-  //     ),
-  //     locationPoints: locationHistory,
-  //     totalDistance: totalDistance,
-  //   );
-  // }
-
-  // ... existing code ...
-
   RouteHistoryModel _createRouteFromLocationHistory(
-      List<LocationModel> locationHistory) {
+    List<LocationModel> locationHistory,
+  ) {
     if (locationHistory.isEmpty) {
-      print("UYARI: Boş konum geçmişi ile rota oluşturuluyor");
       return RouteHistoryModel(
         id: const Uuid().v4(),
         startTime: DateTime.now(),
@@ -168,19 +146,18 @@ class LocationRepositoryImpl implements LocationRepository {
       totalDistance: totalDistance,
     );
 
-    print(
+    debugPrint(
         "Rota oluşturuldu: ID=${route.id}, Konum noktaları=${route.locationPoints.length}");
 
     return route;
   }
 
-// ... existing code ...
-
+  //TODO: calculate distance between two points
   double _calculateDistanceBetweenPoints(
     LocationModel start,
     LocationModel end,
   ) {
-    const double earthRadius = 6371000; // metre cinsinden
+    const double earthRadius = 6371000;
     final double lat1 = start.latitude * pi / 180;
     final double lon1 = start.longitude * pi / 180;
     final double lat2 = end.latitude * pi / 180;

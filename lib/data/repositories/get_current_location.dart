@@ -1,5 +1,5 @@
-import 'package:marti_case/features/location/domain/models/location_model.dart';
-import 'package:marti_case/features/location/domain/repositories/location_repository.dart';
+import 'package:marti_case/data/models/location_model.dart';
+import 'package:marti_case/data/repositories/location_repository.dart';
 
 class GetCurrentLocation {
   final LocationRepository repository;

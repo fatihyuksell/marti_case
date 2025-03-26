@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:marti_case/features/location/domain/models/location_model.dart';
+import 'package:marti_case/data/models/location_model.dart';
 
 abstract class LocationService {
   Future<LocationModel> getCurrentLocation();
@@ -28,7 +28,7 @@ class LocationServiceImpl implements LocationService {
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 1,
+        distanceFilter: 2,
       ),
     ).map((position) => LocationModel(
           latitude: position.latitude,

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:marti_case/core/dep_injection.dart';
+import 'package:marti_case/core/providers.dart';
 
-import 'package:marti_case/features/location/domain/models/location_model.dart';
-import 'package:marti_case/features/location/domain/models/location_state.dart';
-import 'package:marti_case/presentation/screens/location_view_model.dart';
+import 'package:marti_case/data/models/location_model.dart';
+import 'package:marti_case/data/models/location_state.dart';
+import 'package:marti_case/screens/view_model/location_view_model.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});

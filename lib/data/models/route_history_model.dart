@@ -1,11 +1,11 @@
-import 'package:marti_case/features/location/domain/models/location_model.dart';
+import 'package:marti_case/data/models/location_model.dart';
 
 class RouteHistoryModel {
   final String id;
   final DateTime startTime;
   final DateTime endTime;
   final List<LocationModel> locationPoints;
-  final double totalDistance; // metre cinsinden
+  final double totalDistance;
 
   RouteHistoryModel({
     required this.id,
@@ -15,7 +15,6 @@ class RouteHistoryModel {
     required this.totalDistance,
   });
 
-  // JSON'dan nesne oluşturma
   factory RouteHistoryModel.fromJson(Map<String, dynamic> json) {
     return RouteHistoryModel(
       id: json['id'],
@@ -28,7 +27,6 @@ class RouteHistoryModel {
     );
   }
 
-  // Nesneyi JSON'a dönüştürme
   Map<String, dynamic> toJson() {
     return {
       'id': id,

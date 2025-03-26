@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:marti_case/features/location/domain/models/route_history_model.dart';
-import 'package:marti_case/presentation/map_screen.dart';
-import 'package:marti_case/presentation/screens/home_screen.dart';
-import 'package:marti_case/presentation/screens/route_map_screen.dart';
+import 'package:marti_case/data/models/route_history_model.dart';
+import 'package:marti_case/screens/views/map_screen.dart';
+import 'package:marti_case/screens/views/home_screen.dart';
+import 'package:marti_case/screens/views/route_map_screen.dart';
 
 class AppRouter {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

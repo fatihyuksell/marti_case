@@ -1,4 +1,4 @@
-import 'package:marti_case/features/location/domain/models/location_model.dart';
+import 'package:marti_case/data/models/location_model.dart';
 
 class LocationState {
   final LocationModel? currentLocation;

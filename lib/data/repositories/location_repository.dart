@@ -1,5 +1,5 @@
-import 'package:marti_case/features/location/domain/models/route_history_model.dart';
-import 'package:marti_case/features/location/domain/models/location_model.dart';
+import 'package:marti_case/data/models/route_history_model.dart';
+import 'package:marti_case/data/models/location_model.dart';
 
 abstract class LocationRepository {
   Future<LocationModel> getCurrentLocation();

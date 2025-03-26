@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:marti_case/core/dep_injection.dart';
+import 'package:marti_case/core/providers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
