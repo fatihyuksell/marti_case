@@ -36,7 +36,6 @@ class AppRouter {
   }
 }
 
-// Rota durumunu temsil eden sınıf
 class AppRouteConfiguration {
   final String location;
 
